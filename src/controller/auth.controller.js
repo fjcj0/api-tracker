@@ -1,6 +1,6 @@
 import express, { response, request } from 'express';
 import { db } from '../config/db.js';
-import { users } from '../db/schema.js';
+import { incomes, losses, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 export const create_user = async (request, response) => {
     try {
@@ -139,13 +139,13 @@ export const get_incomes = async (request, response) => {
                 error: 'userId is required!!'
             });
         }
-        const incomes = await db.select()
+        const user_incomes = await db.select()
             .from(incomes)
-            .where(eq(incomes.user_id, userId))
+            .where(eq(incomes.user_id, parseInt(userId)))
             .orderBy(incomes.created_at);
 
         return response.status(200).json({
-            incomes: incomes
+            user_incomes
         });
     } catch (error) {
         return response.status(500).json({
@@ -161,13 +161,13 @@ export const get_losses = async (request, response) => {
                 error: 'userId is required!!'
             });
         }
-        const losses = await db.select()
+        const user_losses = await db.select()
             .from(losses)
-            .where(eq(losses.user_id, userId))
+            .where(eq(losses.user_id, parseInt(userId)))
             .orderBy(losses.created_at);
 
         return response.status(200).json({
-            losses: losses
+            user_losses
         });
     } catch (error) {
         return response.status(500).json({
