@@ -18,11 +18,13 @@
   "type": "module",
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
+    "cloudinary": "^2.8.0",
     "cors": "^2.8.5",
     "cron": "^4.3.3",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
+    "multer": "^2.0.2",
     "nodemon": "^3.1.10"
   },
   "devDependencies": {

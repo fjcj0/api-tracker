@@ -1,7 +1,9 @@
 import express, { response, request } from 'express';
 import { db } from '../config/db.js';
 import { incomes, losses, users } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
+import cloudinary from '../utils/cloudaniry.js';
+import { getPublicIdFromUrl } from '../utils/getPublicIdFromUrl.js';
 export const create_user = async (request, response) => {
     try {
         const { clerkId, name, email, money, profile_picture } = request.body;
@@ -175,3 +177,79 @@ export const get_losses = async (request, response) => {
         });
     }
 };
+export const getUsers = async (request, response) => {
+    const { userId } = request.params;
+    try {
+        const all_users = await db.select({
+            id: users.id,
+            email: users.email,
+            name: users.name,
+            profile_picture: users.profile_picture
+        }).from(users).where(ne(users.id, userId));
+        return response.status(200).json({
+            users: all_users
+        });
+    } catch (error) {
+        return response.status(500).json({
+            error: error instanceof Error ? error.message : error
+        })
+    }
+};
+export const editProfilePicture = async (request, response) => {
+    try {
+        const new_profile_picture = request.file;
+        const { userId } = request.params;
+
+        if (!new_profile_picture) {
+            return response.status(400).json({
+                error: 'Profile picture is required!!'
+            });
+        }
+        if (!userId) {
+            return response.status(400).json({
+                error: 'userId is required!!'
+            });
+        }
+        const user = await db.select({
+            id: users.id,
+            profile_picture: users.profile_picture
+        }).from(users).where(eq(users.id, parseInt(userId)));
+
+        if (user.length === 0) {
+            return response.status(404).json({
+                error: 'User not found!!'
+            });
+        }
+        if (user[0].profile_picture) {
+            const publicId = getPublicIdFromUrl(user[0].profile_picture, 'users');
+            if (publicId) {
+                try {
+                    await cloudinary.uploader.destroy(publicId);
+                } catch (cloudinaryError) {
+                    console.warn('Failed to delete old image from Cloudinary:', cloudinaryError);
+                }
+            }
+        }
+        const base64Image = `data:${new_profile_picture.mimetype};base64,${new_profile_picture.buffer.toString('base64')}`;
+        const uploadResult = await cloudinary.uploader.upload(base64Image, {
+            folder: 'users',
+            resource_type: 'image',
+            transformation: [
+                { width: 500, height: 500, crop: 'limit' },
+                { quality: 'auto' }
+            ]
+        });
+        const updatedUser = await db.update(users).set({
+            profile_picture: uploadResult.secure_url,
+        }).where(eq(users.id, parseInt(userId))).returning();
+        return response.status(200).json({
+            message: 'Profile picture updated successfully!!',
+            user: updatedUser[0]
+        });
+    } catch (error) {
+        console.error('Error in editProfilePicture:', error);
+        return response.status(500).json({
+            error: error instanceof Error ? error.message : 'Internal server error'
+        });
+    }
+}

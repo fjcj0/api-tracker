@@ -1,5 +1,6 @@
 import express from 'express';
-import { create_user, delete_user, get_incomes, get_losses, get_user, update_user } from '../controller/auth.controller.js';
+import { create_user, delete_user, editProfilePicture, get_incomes, get_losses, get_user, getUsers, update_user } from '../controller/auth.controller.js';
+import upload from '../utils/multer.js';
 const route = express.Router();
 route.get('/:clerkId', get_user);
 route.post('/', create_user);
@@ -7,4 +8,6 @@ route.put('/:clerkId', update_user);
 route.delete('/:clerkId', delete_user);
 route.get('/get-income/:userId', get_incomes);
 route.get('/get-loss/:userId', get_losses);
+route.get('/users/:userId', getUsers);
+route.put('/update-profile/:userId', upload.single('profile_picture'), editProfilePicture);
 export default route;
