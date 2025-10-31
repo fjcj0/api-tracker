@@ -65,6 +65,7 @@ export const create_transaction = async (request, response) => {
             sent_by_user_id: sentByUserId,
             background_color: backgroundColor,
             text_color: textColor,
+            total_money_sent: totalCost.toFixed(2),
         }).returning();
         await db.update(users)
             .set({
@@ -72,7 +73,6 @@ export const create_transaction = async (request, response) => {
                 updated_at: new Date(),
             })
             .where(eq(users.id, parseInt(sentToUserId)));
-
         await db.update(purchases)
             .set({
                 percent: newPercent,

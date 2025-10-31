@@ -8,6 +8,13 @@
       "when": 1761670200585,
       "tag": "0000_pale_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761931041670,
+      "tag": "0001_omniscient_spot",
+      "breakpoints": true
     }
   ]
 }

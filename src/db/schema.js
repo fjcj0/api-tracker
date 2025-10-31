@@ -44,6 +44,7 @@ export const transactions = pgTable("transactions", {
     sent_by_user_id: integer("sent_by_user_id").notNull().references(() => users.id),
     background_color: text("background_color").notNull(),
     text_color: text("text_color").notNull(),
+    total_money_sent: decimal("total_money_sent", { precision: 10, scale: 2 }).notNull(),
     created_at: timestamp("created_at").defaultNow(),
     updated_at: timestamp("updated_at").defaultNow(),
 });
