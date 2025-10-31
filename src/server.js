@@ -7,7 +7,10 @@ import productRoute from './routes/products.route.js';
 import express, { response, request } from 'express';
 import cors from 'cors';
 const app = express();
-const allowedOrigins = [process.env.EXPO_APP, process.env.EXPO_URL];
+const allowedOrigins = [
+    process.env.EXPO_APP,
+    process.env.EXPO_URL,
+];
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);

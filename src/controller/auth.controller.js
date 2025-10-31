@@ -7,6 +7,7 @@ import { getPublicIdFromUrl } from '../utils/getPublicIdFromUrl.js';
 export const create_user = async (request, response) => {
     try {
         const { clerkId, name, email, money, profile_picture } = request.body;
+
         if (!clerkId || !name || !email || !money || !profile_picture) {
             return response.status(400).json({
                 error: 'All fields are required!!'
@@ -29,13 +30,15 @@ export const create_user = async (request, response) => {
             money,
             profile_picture,
         }).returning();
+
         return response.status(201).json({
             message: 'User created successfully',
             user: newUser[0]
         });
     } catch (error) {
+        console.error("Create user error:", error);
         return response.status(500).json({
-            error: error instanceof Error ? error.message : error
+            error: error instanceof Error ? error.message : 'Internal server error'
         });
     }
 };
