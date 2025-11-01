@@ -14,6 +14,11 @@ export const create_purchase = async (request, response) => {
         const parsedQuantity = parseInt(quantity);
         const parsedNewSalary = parseFloat(new_salary);
         const parsedAvailable = parseInt(available);
+        if (isNaN(parsedPercent) || isNaN(parsedQuantity) || isNaN(parsedNewSalary) || isNaN(parsedAvailable)) {
+            return response.status(400).json({
+                error: 'Invalid numeric values provided!!'
+            });
+        }
         const [user] = await db.select().from(users).where(eq(users.id, user_id));
         const [product] = await db.select().from(products).where(eq(products.id, product_id));
         if (!user) {
@@ -62,6 +67,23 @@ export const create_purchase = async (request, response) => {
                         eq(purchases.user_id, user_id)
                     ))
                     .returning();
+                const purchaseWithProduct = await db.select({
+                    id: purchases.id,
+                    product_id: purchases.product_id,
+                    user_id: purchases.user_id,
+                    percent: purchases.percent,
+                    quantity: purchases.quantity,
+                    new_salary: purchases.new_salary,
+                    available: purchases.available,
+                    created_at: purchases.created_at,
+                    updated_at: purchases.updated_at,
+                    title: products.title,
+                    image: products.image,
+                    icon: products.company_icon
+                })
+                    .from(purchases)
+                    .leftJoin(products, eq(purchases.product_id, products.id))
+                    .where(eq(purchases.id, updated_purchase[0].id));
                 const loss = await db.insert(losses).values({
                     user_id: user_id,
                     title: `Purchase of ${product.title}`,
@@ -70,7 +92,7 @@ export const create_purchase = async (request, response) => {
                 }).returning();
                 return response.status(200).json({
                     message: 'Purchase updated successfully!!',
-                    purchase: updated_purchase[0],
+                    purchase: purchaseWithProduct[0],
                     loss: loss[0]
                 });
             }
@@ -100,21 +122,38 @@ export const create_purchase = async (request, response) => {
                 available: parsedAvailable,
             })
             .returning();
+        const purchaseWithProduct = await db.select({
+            id: purchases.id,
+            product_id: purchases.product_id,
+            user_id: purchases.user_id,
+            percent: purchases.percent,
+            quantity: purchases.quantity,
+            new_salary: purchases.new_salary,
+            available: purchases.available,
+            created_at: purchases.created_at,
+            updated_at: purchases.updated_at,
+            title: products.title,
+            image: products.image,
+            icon: products.company_icon
+        })
+            .from(purchases)
+            .leftJoin(products, eq(purchases.product_id, products.id))
+            .where(eq(purchases.id, created_purchase[0].id));
         const loss = await db.insert(losses).values({
             user_id: user_id,
             title: `Purchase of ${product.title}`,
             icon_company: product.company_icon,
             loss: totalCost.toFixed(2),
         }).returning();
-
         return response.status(201).json({
             message: 'Purchase created successfully!!',
-            purchase: created_purchase[0],
+            purchase: purchaseWithProduct[0],
             loss: loss[0]
         });
     } catch (error) {
+        console.error('Error creating purchase:', error);
         return response.status(500).json({
-            error: error instanceof Error ? error.message : error
+            error: error instanceof Error ? error.message : 'Internal server error'
         });
     }
 };
