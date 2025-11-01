@@ -5,87 +5,125 @@ import { eq } from 'drizzle-orm';
 export const create_transaction = async (request, response) => {
     try {
         const { purchaseId, productId, userId, sentToUserId, sentByUserId, backgroundColor, textColor, quantity } = request.body;
+
         if (!productId || !purchaseId || !userId || !sentToUserId || !sentByUserId || !backgroundColor || !textColor || !quantity) {
             return response.status(400).json({
                 error: 'All fields are required!!'
             });
         }
-        const [purchase] = await db.select().from(purchases).where(eq(purchases.id, parseInt(purchaseId)));
+
+        // Parse all IDs to numbers
+        const parsedPurchaseId = parseInt(purchaseId);
+        const parsedProductId = parseInt(productId);
+        const parsedUserId = parseInt(userId);
+        const parsedSentToUserId = parseInt(sentToUserId);
+        const parsedSentByUserId = parseInt(sentByUserId);
+        const parsedQuantity = parseInt(quantity);
+
+        // Validate all IDs
+        if ([parsedPurchaseId, parsedProductId, parsedUserId, parsedSentToUserId, parsedSentByUserId, parsedQuantity].some(isNaN)) {
+            return response.status(400).json({
+                error: 'All IDs and quantity must be valid numbers!!'
+            });
+        }
+
+        const [purchase] = await db.select().from(purchases).where(eq(purchases.id, parsedPurchaseId));
         if (!purchase) {
             return response.status(404).json({
                 error: 'Purchase not found!!'
             });
         }
-        const [receiverUser] = await db.select().from(users).where(eq(users.id, parseInt(sentToUserId)));
+
+        const [receiverUser] = await db.select().from(users).where(eq(users.id, parsedSentToUserId));
         if (!receiverUser) {
             return response.status(404).json({
                 error: 'Receiver user not found!!'
             });
         }
-        const [senderUser] = await db.select().from(users).where(eq(users.id, parseInt(sentByUserId)));
+
+        const [senderUser] = await db.select().from(users).where(eq(users.id, parsedSentByUserId));
         if (!senderUser) {
             return response.status(404).json({
                 error: 'Sender user not found!!'
             });
         }
-        const [product] = await db.select().from(products).where(eq(products.id, parseInt(productId)));
+
+        const [product] = await db.select().from(products).where(eq(products.id, parsedProductId));
         if (!product) {
             return response.status(404).json({
                 error: 'Product not found!!'
             });
         }
-        const [currentUser] = await db.select().from(users).where(eq(users.id, parseInt(userId)));
-        if (!currentUser) {
-            return response.status(404).json({
-                error: 'Current user not found!!'
+
+        // Check if purchase belongs to the user making the transaction
+        if (purchase.user_id !== parsedUserId) {
+            return response.status(403).json({
+                error: 'You can only create transactions for your own purchases!!'
             });
         }
-        if (purchase.quantity < quantity) {
+
+        // Validate quantity
+        if (purchase.quantity < parsedQuantity) {
             return response.status(400).json({
                 error: `Not enough quantity available! Only ${purchase.quantity} left.`
             });
         }
+
         if (purchase.available === 0) {
             return response.status(400).json({
                 error: 'This purchase is not available for transactions!'
             });
         }
+
+        // Calculate transaction values
         const currentMoney = parseFloat(receiverUser.money);
         const newSalary = parseFloat(purchase.new_salary);
-        const totalCost = quantity * newSalary;
+        const totalCost = parsedQuantity * newSalary;
         const newMoney = (currentMoney + totalCost).toFixed(2);
-        const newQuantity = purchase.quantity - quantity;
-        const newPercent = ((newQuantity / purchase.quantity) * 100).toFixed(2) + '%';
+        const newQuantity = purchase.quantity - parsedQuantity;
+
+        // Fix: Calculate percent as numeric, not string
+        const newPercent = ((newQuantity / purchase.quantity) * 100);
         const newAvailable = newQuantity > 0 ? 1 : 0;
+
+        // Create transaction
         const created_transaction = await db.insert(transactions).values({
-            purchase_id: purchaseId,
-            product_id: productId,
-            user_id: userId,
-            sent_to_user_id: sentToUserId,
-            sent_by_user_id: sentByUserId,
+            purchase_id: parsedPurchaseId,
+            product_id: parsedProductId,
+            user_id: parsedUserId,
+            sent_to_user_id: parsedSentToUserId,
+            sent_by_user_id: parsedSentByUserId,
             background_color: backgroundColor,
             text_color: textColor,
             total_money_sent: totalCost.toFixed(2),
         }).returning();
+
+        // Update receiver's money
         await db.update(users)
             .set({
                 money: newMoney,
                 updated_at: new Date(),
             })
-            .where(eq(users.id, parseInt(sentToUserId)));
+            .where(eq(users.id, parsedSentToUserId));
+
+        // Update purchase
         await db.update(purchases)
             .set({
-                percent: newPercent,
+                percent: newPercent, // Now storing as numeric
+                quantity: newQuantity,
                 available: newAvailable,
                 updated_at: new Date(),
             })
-            .where(eq(purchases.id, parseInt(purchaseId)));
+            .where(eq(purchases.id, parsedPurchaseId));
+
+        // Create income record
         const income = await db.insert(incomes).values({
-            user_id: userId,
+            user_id: parsedUserId,
             title: `Sale of ${product.title}`,
             icon_company: product.company_icon,
             profit: totalCost.toFixed(2),
         }).returning();
+
         return response.status(201).json({
             message: 'Transaction created successfully!!',
             transaction: created_transaction[0],

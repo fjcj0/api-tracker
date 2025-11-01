@@ -10,6 +10,10 @@ export const create_purchase = async (request, response) => {
                 error: 'All fields are required!!'
             });
         }
+        const parsedPercent = parseFloat(percent);
+        const parsedQuantity = parseInt(quantity);
+        const parsedNewSalary = parseFloat(new_salary);
+        const parsedAvailable = parseInt(available);
         const [user] = await db.select().from(users).where(eq(users.id, user_id));
         const [product] = await db.select().from(products).where(eq(products.id, product_id));
         if (!user) {
@@ -24,7 +28,7 @@ export const create_purchase = async (request, response) => {
         }
         const userMoney = parseFloat(user.money);
         const productSalary = parseFloat(product.salary);
-        const totalCost = productSalary * quantity;
+        const totalCost = productSalary * parsedQuantity;
         const existing_purchase = await db.select()
             .from(purchases)
             .where(and(
@@ -47,10 +51,10 @@ export const create_purchase = async (request, response) => {
                     .where(eq(users.id, user_id));
                 const updated_purchase = await db.update(purchases)
                     .set({
-                        percent,
-                        quantity,
-                        new_salary,
-                        available,
+                        percent: parsedPercent,
+                        quantity: parsedQuantity,
+                        new_salary: parsedNewSalary,
+                        available: parsedAvailable,
                         updated_at: new Date()
                     })
                     .where(and(
@@ -90,10 +94,10 @@ export const create_purchase = async (request, response) => {
             .values({
                 product_id,
                 user_id,
-                percent,
-                quantity,
-                new_salary,
-                available,
+                percent: parsedPercent,
+                quantity: parsedQuantity,
+                new_salary: parsedNewSalary,
+                available: parsedAvailable,
             })
             .returning();
         const loss = await db.insert(losses).values({
@@ -102,6 +106,7 @@ export const create_purchase = async (request, response) => {
             icon_company: product.company_icon,
             loss: totalCost.toFixed(2),
         }).returning();
+
         return response.status(201).json({
             message: 'Purchase created successfully!!',
             purchase: created_purchase[0],
@@ -121,20 +126,29 @@ export const delete_purchase = async (request, response) => {
                 error: 'purchaseId is required!!'
             });
         }
+
         const purchaseIdNum = parseInt(purchaseId);
         if (isNaN(purchaseIdNum)) {
             return response.status(400).json({
                 error: 'purchaseId must be a valid number!!'
             });
         }
+
         const existingPurchase = await db.select()
             .from(purchases)
             .where(eq(purchases.id, purchaseIdNum));
+
         if (existingPurchase.length === 0) {
             return response.status(404).json({
                 error: `Purchase with ID ${purchaseIdNum} not found!!`
             });
         }
+
+        // Delete related transactions first (if not using cascade)
+        await db.delete(transactions)
+            .where(eq(transactions.purchase_id, purchaseIdNum));
+
+        // Delete the purchase
         const deleted_purchase = await db.delete(purchases)
             .where(eq(purchases.id, purchaseIdNum))
             .returning();
@@ -145,6 +159,7 @@ export const delete_purchase = async (request, response) => {
                 deleted_purchase: deleted_purchase[0]
             });
         }
+
         return response.status(404).json({
             error: 'Purchase not found after deletion attempt'
         });

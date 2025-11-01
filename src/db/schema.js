@@ -25,10 +25,10 @@ export const products = pgTable("products", {
 
 export const purchases = pgTable("purchases", {
     id: serial("id").primaryKey(),
-    product_id: integer("product_id").notNull().references(() => products.id),
-    user_id: integer("user_id").notNull().references(() => users.id),
+    product_id: integer("product_id").notNull().references(() => products.id, { onDelete: 'cascade' }),
+    user_id: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     new_salary: decimal("new_salary", { precision: 10, scale: 2 }).notNull(),
-    percent: text("percent"),
+    percent: decimal("percent", { precision: 5, scale: 2 }).notNull(),
     quantity: integer("quantity").notNull(),
     available: integer("available").notNull(),
     created_at: timestamp("created_at").defaultNow(),
@@ -37,11 +37,11 @@ export const purchases = pgTable("purchases", {
 
 export const transactions = pgTable("transactions", {
     id: serial("id").primaryKey(),
-    purchase_id: integer("purchase_id").notNull().references(() => purchases.id),
-    product_id: integer("product_id").notNull().references(() => products.id),
-    user_id: integer("user_id").notNull().references(() => users.id),
-    sent_to_user_id: integer("sent_to_user_id").notNull().references(() => users.id),
-    sent_by_user_id: integer("sent_by_user_id").notNull().references(() => users.id),
+    purchase_id: integer("purchase_id").notNull().references(() => purchases.id, { onDelete: 'cascade' }),
+    product_id: integer("product_id").notNull().references(() => products.id, { onDelete: 'cascade' }),
+    user_id: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    sent_to_user_id: integer("sent_to_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    sent_by_user_id: integer("sent_by_user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
     background_color: text("background_color").notNull(),
     text_color: text("text_color").notNull(),
     total_money_sent: decimal("total_money_sent", { precision: 10, scale: 2 }).notNull(),

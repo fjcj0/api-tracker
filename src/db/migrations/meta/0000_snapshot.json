@@ -1,5 +1,5 @@
 {
-  "id": "072b53bf-3b3d-4d29-82db-b4d7d80c26a0",
+  "id": "0143c5cf-aa96-4624-958e-1a6827948cdf",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -231,14 +231,26 @@
           "primaryKey": false,
           "notNull": true
         },
+        "new_salary": {
+          "name": "new_salary",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "percent": {
           "name": "percent",
-          "type": "text",
+          "type": "numeric(5, 2)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "quantity": {
           "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "available": {
+          "name": "available",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -270,7 +282,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "purchases_user_id_users_id_fk": {
@@ -283,7 +295,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -345,6 +357,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "total_money_sent": {
+          "name": "total_money_sent",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -372,7 +390,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "transactions_product_id_products_id_fk": {
@@ -385,7 +403,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "transactions_user_id_users_id_fk": {
@@ -398,7 +416,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "transactions_sent_to_user_id_users_id_fk": {
@@ -411,7 +429,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "transactions_sent_by_user_id_users_id_fk": {
@@ -424,7 +442,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
