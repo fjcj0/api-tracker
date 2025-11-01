@@ -126,14 +126,12 @@ export const delete_purchase = async (request, response) => {
                 error: 'purchaseId is required!!'
             });
         }
-
         const purchaseIdNum = parseInt(purchaseId);
         if (isNaN(purchaseIdNum)) {
             return response.status(400).json({
                 error: 'purchaseId must be a valid number!!'
             });
         }
-
         const existingPurchase = await db.select()
             .from(purchases)
             .where(eq(purchases.id, purchaseIdNum));
@@ -143,23 +141,17 @@ export const delete_purchase = async (request, response) => {
                 error: `Purchase with ID ${purchaseIdNum} not found!!`
             });
         }
-
-        // Delete related transactions first (if not using cascade)
         await db.delete(transactions)
             .where(eq(transactions.purchase_id, purchaseIdNum));
-
-        // Delete the purchase
         const deleted_purchase = await db.delete(purchases)
             .where(eq(purchases.id, purchaseIdNum))
             .returning();
-
         if (deleted_purchase.length > 0) {
             return response.status(200).json({
                 message: 'Deleted successfully!!',
                 deleted_purchase: deleted_purchase[0]
             });
         }
-
         return response.status(404).json({
             error: 'Purchase not found after deletion attempt'
         });
