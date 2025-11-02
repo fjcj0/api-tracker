@@ -31,6 +31,12 @@ export const create_purchase = async (request, response) => {
                 error: 'Product not found!!'
             });
         }
+        const currentProductQuantity = parseInt(product.quantity);
+        if (currentProductQuantity < parsedQuantity) {
+            return response.status(400).json({
+                error: 'Not enough product quantity available!!'
+            });
+        }
         const userMoney = parseFloat(user.money);
         const productSalary = parseFloat(product.salary);
         const totalCost = productSalary * parsedQuantity;
@@ -54,6 +60,13 @@ export const create_purchase = async (request, response) => {
                         updated_at: new Date()
                     })
                     .where(eq(users.id, user_id));
+                const newProductQuantity = currentProductQuantity - parsedQuantity;
+                await db.update(products)
+                    .set({
+                        quantity: newProductQuantity,
+                        updated_at: new Date()
+                    })
+                    .where(eq(products.id, product_id));
                 const updated_purchase = await db.update(purchases)
                     .set({
                         percent: parsedPercent,
@@ -90,6 +103,7 @@ export const create_purchase = async (request, response) => {
                     icon_company: product.company_icon,
                     loss: totalCost.toFixed(2),
                 }).returning();
+
                 return response.status(200).json({
                     message: 'Purchase updated successfully!!',
                     purchase: purchaseWithProduct[0],
@@ -112,6 +126,13 @@ export const create_purchase = async (request, response) => {
                 updated_at: new Date()
             })
             .where(eq(users.id, user_id));
+        const newProductQuantity = currentProductQuantity - parsedQuantity;
+        await db.update(products)
+            .set({
+                quantity: newProductQuantity,
+                updated_at: new Date()
+            })
+            .where(eq(products.id, product_id));
         const created_purchase = await db.insert(purchases)
             .values({
                 product_id,
